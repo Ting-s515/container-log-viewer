@@ -32,8 +32,14 @@ npm run dev
 若預設 port 衝突，可建立 `.env` 檔案：
 
 ```bash
+# Linux / macOS
 cp .env.example .env
+
+# Windows (PowerShell)
+Copy-Item .env.example .env
 ```
+
+編輯 `.env`：
 
 ```bash
 VITE_PORT=5173      # 前端
@@ -90,16 +96,39 @@ SERVER_PORT=3001    # 後端
 
 ## 📦 Docker 部署
 
-```bash
-cp .env.example .env
-# 編輯 .env 設定 CLIENT_PORT 和 SERVER_PORT
+只需兩行指令，自動拉取 image 並啟動。
 
-docker-compose up -d --build
+### Linux / macOS
+
+```bash
+curl -O https://raw.githubusercontent.com/Ting-s515/ContainerLogViewer/main/docker-compose.hub.yml
+docker-compose -f docker-compose.hub.yml up -d
 ```
 
-開啟 `http://你的伺服器IP:8080`
+自訂 port：
 
-> ⚠️ 需掛載 `/var/run/docker.sock` 以存取主機 Docker Daemon
+```bash
+CLIENT_PORT=8080 SERVER_PORT=3001 docker-compose -f docker-compose.hub.yml up -d
+```
+
+### Windows (PowerShell)
+
+```powershell
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Ting-s515/ContainerLogViewer/main/docker-compose.hub.yml" -OutFile "docker-compose.hub.yml"
+docker-compose -f docker-compose.hub.yml up -d
+```
+
+自訂 port：
+
+```powershell
+$env:CLIENT_PORT=8080; $env:SERVER_PORT=3001; docker-compose -f docker-compose.hub.yml up -d
+```
+
+---
+
+啟動後開啟 http://localhost（或自訂的 CLIENT_PORT）
+
+> ⚠️ Linux/macOS 需掛載 `/var/run/docker.sock` 以存取主機 Docker Daemon
 
 ## 📖 開發者文件
 

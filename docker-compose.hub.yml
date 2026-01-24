@@ -1,0 +1,26 @@
+# Container Log Viewer - Docker Hub 快速部署
+#
+# 使用方式：
+#   curl -O https://raw.githubusercontent.com/<your-username>/container-log-viewer/main/docker-compose.hub.yml
+#   docker-compose -f docker-compose.hub.yml up -d
+#
+# 自訂 port：
+#   CLIENT_PORT=8080 SERVER_PORT=3001 docker-compose -f docker-compose.hub.yml up -d
+
+services:
+  server:
+    image: tings515/container-log-viewer-server:latest
+    ports:
+      - "${SERVER_PORT:-3001}:3001"
+    volumes:
+      # 掛載 Docker socket，讓容器內可以存取主機的 Docker/Podman
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+  client:
+    image: tings515/container-log-viewer-client:latest
+    ports:
+      - "${CLIENT_PORT:-80}:80"
+    depends_on:
+      - server
+    restart: unless-stopped

@@ -104,3 +104,50 @@ container-log-viewer/
 // 錯誤訊息
 { "type": "error", "message": "Error description" }
 ```
+
+## 🐳 發布到 Docker Hub
+
+將 image 打包並推送到 Docker Hub，讓用戶可以直接 pull 使用。
+
+### 1. 登入 Docker Hub
+
+```bash
+docker login
+```
+
+### 2. 建構並推送 image
+
+```bash
+# 設定你的 Docker Hub username
+$DOCKER_USER="your-dockerhub-username"
+
+# 建構 server image
+docker build -t $DOCKER_USER/container-log-viewer-server:latest ./server
+
+# 建構 client image
+docker build -t $DOCKER_USER/container-log-viewer-client:latest ./client
+
+# 推送到 Docker Hub
+docker push $DOCKER_USER/container-log-viewer-server:latest
+docker push $DOCKER_USER/container-log-viewer-client:latest
+```
+
+### 3. 發布新版本（帶版號）
+
+```bash
+VERSION=1.0.0
+
+# 建構並打上版號 tag
+docker build -t $DOCKER_USER/container-log-viewer-server:$VERSION ./server
+docker build -t $DOCKER_USER/container-log-viewer-client:$VERSION ./client
+
+# 同時打上 latest tag
+docker tag $DOCKER_USER/container-log-viewer-server:$VERSION $DOCKER_USER/container-log-viewer-server:latest
+docker tag $DOCKER_USER/container-log-viewer-client:$VERSION $DOCKER_USER/container-log-viewer-client:latest
+
+# 推送所有 tag
+docker push $DOCKER_USER/container-log-viewer-server:$VERSION
+docker push $DOCKER_USER/container-log-viewer-server:latest
+docker push $DOCKER_USER/container-log-viewer-client:$VERSION
+docker push $DOCKER_USER/container-log-viewer-client:latest
+```
