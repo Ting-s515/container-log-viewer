@@ -1,7 +1,7 @@
 {
   "name": "container-log-viewer",
   "version": "1.0.0",
-  "description": "方便查看 Docker/Podman 容器 log 的 UI 工具",
+  "description": "A user-friendly UI tool for viewing Docker/Podman container logs.",
   "private": true,
   "workspaces": [
     "client",

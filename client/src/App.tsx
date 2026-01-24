@@ -22,6 +22,11 @@ function App() {
   const [filter, setFilter] = useState<string>('');
   const [isFollowing, setIsFollowing] = useState<boolean>(true);
 
+  // 串流控制：是否接收新 log
+  const [isStreaming, setIsStreaming] = useState<boolean>(true);
+  // Log 數量上限（0 表示不限制）
+  const [maxLogs, setMaxLogs] = useState<number>(500);
+
   // Log 內容
   const [logs, setLogs] = useState<string[]>([]);
 
@@ -42,9 +47,19 @@ function App() {
     if (!lastMessage) return;
 
     if (lastMessage.type === 'log' && lastMessage.data) {
-      setLogs((prev) => [...prev, lastMessage.data]);
+      // 若串流已關閉，忽略新 log
+      if (!isStreaming) return;
+
+      setLogs((prev) => {
+        const newLogs = [...prev, lastMessage.data];
+        // 若有設定上限且超過，則移除最舊的 log
+        if (maxLogs > 0 && newLogs.length > maxLogs) {
+          return newLogs.slice(-maxLogs);
+        }
+        return newLogs;
+      });
     }
-  }, [lastMessage]);
+  }, [lastMessage, isStreaming, maxLogs]);
 
   // 取得容器列表
   const fetchContainers = async () => {
@@ -109,6 +124,17 @@ function App() {
     setLogs([]);
   };
 
+  // 處理 maxLogs 輸入變更，限制範圍 0~1000
+  const handleMaxLogsChange = (value: string) => {
+    const num = parseInt(value, 10);
+    if (isNaN(num)) {
+      setMaxLogs(0);
+    } else {
+      // 限制在 0~1000 之間
+      setMaxLogs(Math.min(1000, Math.max(0, num)));
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
       {/* 頂部工具列 */}
@@ -134,7 +160,34 @@ function App() {
             {/* 關鍵字過濾 */}
             <LogFilter value={filter} onChange={handleFilterChange} />
 
-            {/* 即時追蹤開關 */}
+            {/* 串流開關：控制是否接收新 log */}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isStreaming}
+                onChange={(e) => setIsStreaming(e.target.checked)}
+                className="w-4 h-4 accent-green-500"
+              />
+              <span className="text-sm">接收新 Log</span>
+            </label>
+
+            {/* Log 數量上限輸入框，僅在串流開啟時顯示 */}
+            {isStreaming && (
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-400">保留：</label>
+                <input
+                  type="number"
+                  value={maxLogs}
+                  onChange={(e) => handleMaxLogsChange(e.target.value)}
+                  min={0}
+                  max={1000}
+                  className="w-20 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-sm text-white focus:outline-none focus:border-blue-500"
+                />
+                <span className="text-sm text-gray-400">則</span>
+              </div>
+            )}
+
+            {/* 即時追蹤開關：控制是否自動捲動到底部 */}
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -142,7 +195,7 @@ function App() {
                 onChange={(e) => setIsFollowing(e.target.checked)}
                 className="w-4 h-4 accent-blue-500"
               />
-              <span className="text-sm">即時追蹤</span>
+              <span className="text-sm">自動捲動</span>
             </label>
 
             {/* 清空按鈕 */}

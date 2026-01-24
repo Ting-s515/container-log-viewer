@@ -1,6 +1,14 @@
-# 開發環境 Docker Compose 設定
-# 注意：此設定是可選的，用於將本工具容器化部署
-# 開發時直接使用 npm run dev 即可
+# Container Log Viewer - Docker Compose 部署設定
+#
+# 使用方式：
+#   1. 複製 .env.example 為 .env
+#   2. 修改 .env 中的 port 設定
+#   3. 執行 docker-compose up -d --build
+#
+# 或直接在命令列指定 port：
+#   CLIENT_PORT=8080 SERVER_PORT=3001 docker-compose up -d --build
+#
+# 注意：需掛載 /var/run/docker.sock 才能存取主機的 Docker
 
 services:
   # 後端服務
@@ -9,21 +17,26 @@ services:
       context: ./server
       dockerfile: Dockerfile
     ports:
-      - "3001:3001"
+      - "${SERVER_PORT:-3001}:3001"
     volumes:
-      # 掛載 Docker socket，讓容器內可以存取主機的 Docker
+      # 掛載 Docker socket，讓容器內可以存取主機的 Docker/Podman
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - PORT=3001
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # 前端服務（生產環境可用 nginx 提供靜態檔案）
+  # 前端服務（nginx 提供靜態檔案 + 代理 API）
   client:
     build:
       context: ./client
       dockerfile: Dockerfile
     ports:
-      - "80:80"
+      - "${CLIENT_PORT:-80}:80"
     depends_on:
       - server
     restart: unless-stopped

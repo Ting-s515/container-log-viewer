@@ -1,11 +1,16 @@
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
+import { config } from 'dotenv';
+import { resolve } from 'path';
 import { setupWebSocket } from './websocket/index.js';
 import containerRoutes from './routes/containers.js';
 
+// 從根目錄載入 .env 檔案（monorepo 結構）
+config({ path: resolve(__dirname, '../../.env') });
+
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.SERVER_PORT || 3001;
 
 // 中間件設定
 app.use(cors());

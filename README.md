@@ -50,7 +50,8 @@
 ```
 container-log-viewer/
 ├── package.json                # Monorepo 根設定 (npm workspaces)
-├── docker-compose.yml          # 容器化部署設定 (可選)
+├── docker-compose.yml          # 容器化部署設定
+├── .env.example                # 環境變數範本（port 設定）
 │
 ├── client/                     # 前端 React 應用
 │   ├── src/
@@ -100,6 +101,24 @@ cd container-log-viewer
 npm install
 ```
 
+### 設定 Port（可選）
+
+若預設 port 與其他專案衝突，可建立 `.env` 檔案自訂：
+
+```bash
+cp .env.example .env
+```
+
+編輯 `.env`：
+
+```bash
+# 前端開發伺服器 port (Vite)
+VITE_PORT=5173
+
+# 後端開發伺服器 port (Express)
+SERVER_PORT=3001
+```
+
 ### 啟動開發伺服器
 
 ```bash
@@ -107,9 +126,9 @@ npm install
 npm run dev
 ```
 
-啟動後開啟瀏覽器訪問：
+啟動後開啟瀏覽器訪問（port 依 `.env` 設定）：
 
-| 服務 | 網址 |
+| 服務 | 預設網址 |
 |:-----|:-----|
 | 前端 UI | http://localhost:5173 |
 | 後端 API | http://localhost:3001 |
@@ -213,13 +232,56 @@ npm run dev
 npm run dev
 ```
 
-### Docker 部署（可選）
+### Docker 部署（生產環境）
+
+本工具可獨立部署在 Linux 伺服器上，不需要與其他專案的 docker-compose 整合。
+
+#### 1. 設定環境變數
 
 ```bash
+# 複製環境變數範本
+cp .env.example .env
+
+# 編輯 .env，設定不衝突的 port
+vim .env
+```
+
+`.env` 內容：
+
+```bash
+# Frontend port (web interface)
+CLIENT_PORT=8080
+
+# Backend port (API/WebSocket)
+SERVER_PORT=3001
+```
+
+#### 2. 啟動服務
+
+```bash
+# 建置並啟動
+docker-compose up -d --build
+
+# 確認狀態
+docker-compose ps
+```
+
+#### 3. 存取網頁
+
+開啟瀏覽器訪問：`http://你的伺服器IP:8080`
+
+#### 更換 Port
+
+修改 `.env` 後重啟即可：
+
+```bash
+docker-compose down
 docker-compose up -d
 ```
 
-> ⚠️ 需掛載 `/var/run/docker.sock` 讓容器內可存取主機 Docker Daemon。
+> ⚠️ **注意事項：**
+> - 需掛載 `/var/run/docker.sock` 讓容器內可存取主機 Docker Daemon
+> - Podman 用戶需確認 socket 路徑（可能是 `/run/podman/podman.sock`）
 
 ## 🤝 貢獻
 
