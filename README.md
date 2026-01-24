@@ -121,7 +121,7 @@ docker-compose -f docker-compose.hub.yml up -d
 自訂 port：
 
 ```powershell
-$env:CLIENT_PORT=8080; $env:SERVER_PORT=3001; docker-compose -f docker-compose.hub.yml up -d
+$env:CLIENT_PORT=7070; $env:SERVER_PORT=7100; docker-compose -f docker-compose.hub.yml up -d
 ```
 
 ---

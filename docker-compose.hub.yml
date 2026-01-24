@@ -1,11 +1,20 @@
 # Container Log Viewer - Docker Hub 快速部署
 #
-# 使用方式：
-#   curl -O https://raw.githubusercontent.com/<your-username>/container-log-viewer/main/docker-compose.hub.yml
-#   docker-compose -f docker-compose.hub.yml up -d
+# === Linux / macOS ===
+# curl -O https://raw.githubusercontent.com/Ting-s515/ContainerLogViewer/main/docker-compose.hub.yml
+# docker-compose -f docker-compose.hub.yml up -d
 #
 # 自訂 port：
-#   CLIENT_PORT=8080 SERVER_PORT=3001 docker-compose -f docker-compose.hub.yml up -d
+# CLIENT_PORT=8080 SERVER_PORT=3001 docker-compose -f docker-compose.hub.yml up -d
+#
+# === Windows (PowerShell) ===
+# Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Ting-s515/ContainerLogViewer/main/docker-compose.hub.yml" -OutFile "docker-compose.hub.yml"
+# docker-compose -f docker-compose.hub.yml up -d
+#
+# 自訂 port：
+# $env:CLIENT_PORT=7070; $env:SERVER_PORT=7100; docker-compose -f docker-compose.hub.yml up -d
+#
+# 啟動後開啟 http://localhost（或自訂的 CLIENT_PORT）
 
 services:
   server:
