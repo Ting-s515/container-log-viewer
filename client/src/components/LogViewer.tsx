@@ -7,13 +7,13 @@ interface LogViewerProps {
 }
 
 /**
- * Log 顯示區域
- * 支援即時追蹤（自動捲動到底部）與關鍵字高亮
+ * Log display area
+ * Supports auto-scroll (follow mode) and keyword highlighting
  */
 function LogViewer({ logs, isFollowing, filter }: LogViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 即時追蹤：新 log 進來時自動捲動到底部
+  // Auto-scroll: scroll to bottom when new logs arrive
   useEffect(() => {
     if (isFollowing && containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
@@ -21,19 +21,19 @@ function LogViewer({ logs, isFollowing, filter }: LogViewerProps) {
   }, [logs, isFollowing]);
 
   /**
-   * 將 log 文字中的關鍵字高亮顯示
-   * @param text - 原始 log 文字
-   * @param keyword - 要高亮的關鍵字
+   * Highlight matching keywords in log text
+   * @param text - Original log text
+   * @param keyword - Keyword to highlight
    */
   const highlightKeyword = (text: string, keyword: string) => {
     if (!keyword) return text;
 
-    // 使用正則表達式做大小寫不敏感的搜尋
+    // Case-insensitive regex search
     const regex = new RegExp(`(${escapeRegex(keyword)})`, 'gi');
     const parts = text.split(regex);
 
     return parts.map((part, index) => {
-      // 比對到的關鍵字加上高亮樣式
+      // Apply highlight style to matched keywords
       if (part.toLowerCase() === keyword.toLowerCase()) {
         return (
           <span key={index} className="bg-yellow-500 text-black px-0.5 rounded">
@@ -46,7 +46,7 @@ function LogViewer({ logs, isFollowing, filter }: LogViewerProps) {
   };
 
   /**
-   * 轉義正則特殊字元，避免使用者輸入的字元被誤判
+   * Escape regex special characters to prevent user input errors
    */
   const escapeRegex = (str: string) => {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -58,12 +58,12 @@ function LogViewer({ logs, isFollowing, filter }: LogViewerProps) {
       className="bg-gray-950 rounded-lg border border-gray-700 h-[calc(100vh-140px)] overflow-auto font-mono text-sm"
     >
       {logs.length === 0 ? (
-        // 無 log 時顯示提示
+        // Empty state message
         <div className="flex items-center justify-center h-full text-gray-500">
-          請選擇容器以查看 log
+          Select a container to view logs
         </div>
       ) : (
-        // 逐行顯示 log
+        // Render log lines
         <div className="p-4">
           {logs.map((logChunk, chunkIndex) =>
             logChunk.split('\n').map((line, lineIndex) => {

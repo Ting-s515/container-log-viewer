@@ -13,8 +13,8 @@ interface ContainerSelectProps {
 }
 
 /**
- * 容器選擇下拉選單
- * 顯示容器名稱與狀態，方便使用者選擇目標容器
+ * Container dropdown selector
+ * Shows container name and status for easy selection
  */
 function ContainerSelect({ containers, value, onChange }: ContainerSelectProps) {
   return (
@@ -23,10 +23,10 @@ function ContainerSelect({ containers, value, onChange }: ContainerSelectProps) 
       onChange={(e) => onChange(e.target.value)}
       className="bg-gray-700 border border-gray-600 rounded px-3 py-1.5 text-sm min-w-[200px] focus:outline-none focus:ring-2 focus:ring-blue-500"
     >
-      <option value="">選擇容器...</option>
+      <option value="">Select container...</option>
       {containers.map((container) => (
         <option key={container.id} value={container.id}>
-          {/* 顯示容器名稱與運行狀態 */}
+          {/* Show container name with running status indicator */}
           {container.name} ({container.state === 'running' ? '🟢' : '⚪'})
         </option>
       ))}

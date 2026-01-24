@@ -6,18 +6,18 @@ interface LogFilterProps {
 }
 
 /**
- * 關鍵字過濾輸入框
- * 使用 debounce 避免輸入過程中頻繁觸發過濾
+ * Keyword filter input
+ * Uses debounce to avoid frequent filter triggers during typing
  */
 function LogFilter({ value, onChange }: LogFilterProps) {
   const [inputValue, setInputValue] = useState(value);
 
-  // 同步外部值
+  // Sync with external value
   useEffect(() => {
     setInputValue(value);
   }, [value]);
 
-  // Debounce：輸入停止 300ms 後才觸發 onChange
+  // Debounce: trigger onChange 300ms after user stops typing
   useEffect(() => {
     const timer = setTimeout(() => {
       if (inputValue !== value) {
@@ -33,7 +33,7 @@ function LogFilter({ value, onChange }: LogFilterProps) {
       type="text"
       value={inputValue}
       onChange={(e) => setInputValue(e.target.value)}
-      placeholder="關鍵字過濾..."
+      placeholder="Filter..."
       className="bg-gray-700 border border-gray-600 rounded px-3 py-1.5 text-sm w-40 focus:outline-none focus:ring-2 focus:ring-blue-500"
     />
   );

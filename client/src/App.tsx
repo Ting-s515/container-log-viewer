@@ -137,44 +137,69 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
-      {/* 頂部工具列 */}
+      {/* Header toolbar */}
       <header className="bg-gray-800 border-b border-gray-700 p-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap">
-          <h1 className="text-xl font-bold text-white">
-            🐳 Container Log Viewer
-            {runtime && (
-              <span className="ml-2 text-sm font-normal text-gray-400">
-                ({runtime})
-              </span>
-            )}
-          </h1>
+        <div className="max-w-7xl mx-auto flex flex-col gap-3">
+          {/* 第一行：Logo、選擇器、過濾、清除、連線狀態 */}
+          <div className="flex items-center gap-4">
+            {/* Logo with runtime indicator */}
+            <h1 className="text-xl font-bold text-white whitespace-nowrap shrink-0">
+              🐳 Container Log Viewer
+              {runtime && (
+                <span className="ml-2 text-sm font-normal text-gray-400">
+                  ({runtime})
+                </span>
+              )}
+            </h1>
 
-          <div className="flex items-center gap-4 flex-wrap">
-            {/* 容器選擇 */}
+            {/* Container selector */}
             <ContainerSelect
               containers={containers}
               value={selectedContainer}
               onChange={handleContainerChange}
             />
 
-            {/* 關鍵字過濾 */}
+            {/* Keyword filter input */}
             <LogFilter value={filter} onChange={handleFilterChange} />
 
-            {/* 串流開關：控制是否接收新 log */}
-            <label className="flex items-center gap-2 cursor-pointer">
+            {/* Clear button */}
+            <button
+              onClick={handleClear}
+              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-sm transition-colors"
+            >
+              Clear
+            </button>
+
+            {/* Connection status indicator - ml-auto 將其推到最右邊 */}
+            <div className="flex items-center gap-2 ml-auto">
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  isConnected ? 'bg-green-500' : 'bg-red-500'
+                }`}
+              />
+              <span className="text-xs text-gray-400">
+                {isConnected ? 'Connected' : 'Disconnected'}
+              </span>
+            </div>
+          </div>
+
+          {/* 第二行：Stream、Keep、Auto-scroll，對齊 Logo */}
+          <div className="flex items-center gap-4 px-1">
+            {/* Toggle: receive new logs */}
+            <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
               <input
                 type="checkbox"
                 checked={isStreaming}
                 onChange={(e) => setIsStreaming(e.target.checked)}
                 className="w-4 h-4 accent-green-500"
               />
-              <span className="text-sm">接收新 Log</span>
+              <span className="text-sm">Stream</span>
             </label>
 
-            {/* Log 數量上限輸入框，僅在串流開啟時顯示 */}
+            {/* Max logs input - only visible when streaming is enabled */}
             {isStreaming && (
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-400">保留：</label>
+              <div className="flex items-center gap-1 whitespace-nowrap">
+                <span className="text-sm text-gray-400">Keep</span>
                 <input
                   type="number"
                   value={maxLogs}
@@ -183,45 +208,24 @@ function App() {
                   max={1000}
                   className="w-20 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-sm text-white focus:outline-none focus:border-blue-500"
                 />
-                <span className="text-sm text-gray-400">則</span>
               </div>
             )}
 
-            {/* 即時追蹤開關：控制是否自動捲動到底部 */}
-            <label className="flex items-center gap-2 cursor-pointer">
+            {/* Auto-scroll toggle */}
+            <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
               <input
                 type="checkbox"
                 checked={isFollowing}
                 onChange={(e) => setIsFollowing(e.target.checked)}
                 className="w-4 h-4 accent-blue-500"
               />
-              <span className="text-sm">自動捲動</span>
+              <span className="text-sm">Auto-scroll</span>
             </label>
-
-            {/* 清空按鈕 */}
-            <button
-              onClick={handleClear}
-              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-sm transition-colors"
-            >
-              清空
-            </button>
-
-            {/* 連線狀態 */}
-            <div className="flex items-center gap-2">
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  isConnected ? 'bg-green-500' : 'bg-red-500'
-                }`}
-              />
-              <span className="text-xs text-gray-400">
-                {isConnected ? '已連線' : '未連線'}
-              </span>
-            </div>
           </div>
         </div>
       </header>
 
-      {/* Log 顯示區域 */}
+      {/* Log display area */}
       <main className="p-4">
         <LogViewer logs={logs} isFollowing={isFollowing} filter={filter} />
       </main>
