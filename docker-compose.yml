@@ -1,0 +1,29 @@
+# 開發環境 Docker Compose 設定
+# 注意：此設定是可選的，用於將本工具容器化部署
+# 開發時直接使用 npm run dev 即可
+
+services:
+  # 後端服務
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    volumes:
+      # 掛載 Docker socket，讓容器內可以存取主機的 Docker
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - PORT=3001
+    restart: unless-stopped
+
+  # 前端服務（生產環境可用 nginx 提供靜態檔案）
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    restart: unless-stopped
