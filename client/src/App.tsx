@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useWebSocket } from './hooks/useWebSocket';
 import ContainerSelect from './components/ContainerSelect';
 import LogFilter from './components/LogFilter';
@@ -50,8 +50,11 @@ function App() {
       // 若串流已關閉，忽略新 log
       if (!isStreaming) return;
 
+      // 取出 data 並確保型別為 string（上面已經用 && lastMessage.data 確認不為 undefined）
+      const logData = lastMessage.data as string;
+
       setLogs((prev) => {
-        const newLogs = [...prev, lastMessage.data];
+        const newLogs = [...prev, logData];
         // 若有設定上限且超過，則移除最舊的 log
         if (maxLogs > 0 && newLogs.length > maxLogs) {
           return newLogs.slice(-maxLogs);
