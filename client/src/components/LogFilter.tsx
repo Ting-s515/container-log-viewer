@@ -33,7 +33,7 @@ function LogFilter({ value, onChange }: LogFilterProps) {
       type="text"
       value={inputValue}
       onChange={(e) => setInputValue(e.target.value)}
-      placeholder="Filter..."
+      placeholder="input keyword"
       className="bg-gray-700 border border-gray-600 rounded px-3 py-1.5 text-sm w-40 focus:outline-none focus:ring-2 focus:ring-blue-500"
     />
   );
