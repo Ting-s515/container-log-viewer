@@ -13,6 +13,12 @@ interface Container {
   state: string;
 }
 
+// Log 項目型別：包含接收時間與內容
+export interface LogEntry {
+  timestamp: Date;  // 接收到 log 的時間
+  text: string;     // log 內容
+}
+
 function App() {
   // 容器列表與選中的容器
   const [containers, setContainers] = useState<Container[]>([]);
@@ -26,9 +32,13 @@ function App() {
   const [isStreaming, setIsStreaming] = useState<boolean>(true);
   // Log 數量上限（0 表示不限制）
   const [maxLogs, setMaxLogs] = useState<number>(500);
+  // 輸入框顯示值（允許用戶自由輸入）
+  const [maxLogsInput, setMaxLogsInput] = useState<string>('500');
+  // 輸入錯誤訊息
+  const [maxLogsError, setMaxLogsError] = useState<string>('');
 
-  // Log 內容
-  const [logs, setLogs] = useState<string[]>([]);
+  // Log 內容：儲存帶有時間戳的 log 項目
+  const [logs, setLogs] = useState<LogEntry[]>([]);
 
   // 記錄當前執行環境（docker/podman）
   const [runtime, setRuntime] = useState<string>('');
@@ -53,8 +63,14 @@ function App() {
       // 取出 data 並確保型別為 string（上面已經用 && lastMessage.data 確認不為 undefined）
       const logData = lastMessage.data as string;
 
+      // 建立帶有時間戳的 log 項目，記錄收到此 log 的當下時間
+      const logEntry: LogEntry = {
+        timestamp: new Date(),
+        text: logData,
+      };
+
       setLogs((prev) => {
-        const newLogs = [...prev, logData];
+        const newLogs = [...prev, logEntry];
         // 若有設定上限且超過，則移除最舊的 log
         if (maxLogs > 0 && newLogs.length > maxLogs) {
           return newLogs.slice(-maxLogs);
@@ -127,15 +143,34 @@ function App() {
     setLogs([]);
   };
 
-  // 處理 maxLogs 輸入變更，限制範圍 0~1000
+  // 處理 maxLogs 輸入變更：允許自由輸入，驗證後顯示錯誤或更新實際值
   const handleMaxLogsChange = (value: string) => {
-    const num = parseInt(value, 10);
-    if (isNaN(num)) {
-      setMaxLogs(0);
-    } else {
-      // 限制在 0~1000 之間
-      setMaxLogs(Math.min(1000, Math.max(0, num)));
+    // 允許用戶自由輸入（包括空字串）
+    setMaxLogsInput(value);
+
+    // 驗證輸入值
+    if (value === '') {
+      setMaxLogsError('Required');
+      return;
     }
+
+    const num = parseInt(value, 10);
+
+    // 檢查是否為有效數字
+    if (isNaN(num) || !/^\d+$/.test(value)) {
+      setMaxLogsError('Invalid number');
+      return;
+    }
+
+    // 檢查範圍
+    if (num < 0 || num > 1000) {
+      setMaxLogsError('Must be 0~1000');
+      return;
+    }
+
+    // 驗證通過，清除錯誤並更新實際值
+    setMaxLogsError('');
+    setMaxLogs(num);
   };
 
   return (
@@ -203,14 +238,26 @@ function App() {
             {isStreaming && (
               <div className="flex items-center gap-1 whitespace-nowrap">
                 <span className="text-sm text-gray-400">Keep</span>
-                <input
-                  type="number"
-                  value={maxLogs}
-                  onChange={(e) => handleMaxLogsChange(e.target.value)}
-                  min={0}
-                  max={1000}
-                  className="w-20 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-sm text-white focus:outline-none focus:border-blue-500"
-                />
+                {/* 輸入框容器：relative 定位讓錯誤訊息對齊輸入框 */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={maxLogsInput}
+                    onChange={(e) => handleMaxLogsChange(e.target.value)}
+                    placeholder="0~1000"
+                    className={`w-20 px-2 py-1 bg-gray-700 border rounded text-sm text-white focus:outline-none ${
+                      maxLogsError
+                        ? 'border-red-500 focus:border-red-500'
+                        : 'border-gray-600 focus:border-blue-500'
+                    }`}
+                  />
+                  {/* 錯誤訊息：顯示在輸入框下方，對齊輸入框左側 */}
+                  {maxLogsError && (
+                    <span className="absolute top-full left-0 mt-1 text-xs text-red-400">
+                      {maxLogsError}
+                    </span>
+                  )}
+                </div>
               </div>
             )}
 
