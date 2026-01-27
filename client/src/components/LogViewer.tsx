@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
+import type { LogEntry } from '../App';
 
 interface LogViewerProps {
-  logs: string[];
+  logs: LogEntry[];  // 帶有時間戳的 log 項目陣列
   isFollowing: boolean;
   filter: string;
 }
@@ -52,6 +53,21 @@ function LogViewer({ logs, isFollowing, filter }: LogViewerProps) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   };
 
+  /**
+   * 格式化時間戳為易讀的日期時間字串
+   * 格式：YYYY-MM-DD HH:mm:ss
+   */
+  const formatTimestamp = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  };
+
   return (
     <div
       ref={containerRef}
@@ -65,8 +81,8 @@ function LogViewer({ logs, isFollowing, filter }: LogViewerProps) {
       ) : (
         // Render log lines
         <div className="p-4">
-          {logs.map((logChunk, chunkIndex) =>
-            logChunk.split('\n').map((line, lineIndex) => {
+          {logs.map((logEntry, chunkIndex) =>
+            logEntry.text.split('\n').map((line, lineIndex) => {
               if (!line) return null;
 
               return (
@@ -74,6 +90,12 @@ function LogViewer({ logs, isFollowing, filter }: LogViewerProps) {
                   key={`${chunkIndex}-${lineIndex}`}
                   className="leading-6 hover:bg-gray-800 whitespace-pre-wrap break-all"
                 >
+                  {/* 時間戳：使用青色醒目顯示，只在該 chunk 的第一行顯示 */}
+                  {lineIndex === 0 && (
+                    <span className="text-cyan-400 font-semibold mr-2 select-all">
+                      [{formatTimestamp(logEntry.timestamp)}]
+                    </span>
+                  )}
                   {highlightKeyword(line, filter)}
                 </div>
               );
