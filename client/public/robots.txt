@@ -1,0 +1,6 @@
+# 允許所有搜尋引擎爬蟲索引網站
+User-agent: *
+Allow: /
+
+# Sitemap 位置
+Sitemap: https://ting-s515.github.io/ContainerLogViewer/sitemap.xml

@@ -19,8 +19,8 @@
 ### 安裝與啟動
 
 ```bash
-git clone https://github.com/your-username/container-log-viewer.git
-cd container-log-viewer
+git clone
+cd ContainerLogViewer
 npm install
 npm run dev
 ```
