@@ -26,7 +26,8 @@ function App() {
 
   // 過濾條件
   const [filter, setFilter] = useState<string>('');
-  const [isFollowing, setIsFollowing] = useState<boolean>(true);
+  // 預設關閉自動捲動，避免 log 大量湧入時畫面高速閃爍
+  const [isFollowing, setIsFollowing] = useState<boolean>(false);
 
   // 串流控制：是否接收新 log
   const [isStreaming, setIsStreaming] = useState<boolean>(true);
