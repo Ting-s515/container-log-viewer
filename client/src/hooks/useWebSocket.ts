@@ -8,16 +8,27 @@ interface WsMessage {
   containerId?: string;
 }
 
+// 批次更新的間隔時間（毫秒）
+// 收集此期間內的所有 log，一次性更新 UI，避免高頻更新導致畫面閃爍
+const BATCH_INTERVAL_MS = 500;
+
 /**
  * WebSocket 連線 Hook
  * 自動處理連線、重連、訊息收發
+ * 支援批次更新：累積短時間內的 log 訊息，批次發送以減少 re-render 次數
  */
 export function useWebSocket(path: string) {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WsMessage | null>(null);
+  // 批次訊息陣列，當有多條 log 累積時一次發送
+  const [batchMessages, setBatchMessages] = useState<WsMessage[]>([]);
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
+  // 累積中的 log 訊息緩衝區
+  const pendingMessagesRef = useRef<WsMessage[]>([]);
+  // 批次更新的 timer ID
+  const batchTimerRef = useRef<number | null>(null);
 
   // 建立連線
   const connect = useCallback(() => {
@@ -36,7 +47,26 @@ export function useWebSocket(path: string) {
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
-        setLastMessage(message);
+
+        // log 類型訊息累積到緩衝區，批次更新以避免高頻 re-render
+        if (message.type === 'log') {
+          pendingMessagesRef.current.push(message);
+
+          // 若尚未設定 timer，則啟動批次更新計時器
+          if (batchTimerRef.current === null) {
+            batchTimerRef.current = window.setTimeout(() => {
+              // 將累積的訊息批次發送
+              if (pendingMessagesRef.current.length > 0) {
+                setBatchMessages([...pendingMessagesRef.current]);
+                pendingMessagesRef.current = [];
+              }
+              batchTimerRef.current = null;
+            }, BATCH_INTERVAL_MS);
+          }
+        } else {
+          // 非 log 訊息（started, end, error 等）立即發送，確保控制訊息不被延遲
+          setLastMessage(message);
+        }
       } catch {
         // 非 JSON 格式的訊息，忽略
         console.warn('Invalid WebSocket message:', event.data);
@@ -79,6 +109,10 @@ export function useWebSocket(path: string) {
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
+      // 清除批次更新計時器，避免 memory leak
+      if (batchTimerRef.current) {
+        clearTimeout(batchTimerRef.current);
+      }
       if (wsRef.current) {
         wsRef.current.close();
       }
@@ -88,6 +122,8 @@ export function useWebSocket(path: string) {
   return {
     isConnected,
     lastMessage,
+    // 批次 log 訊息陣列，供上層組件一次處理多條 log
+    batchMessages,
     sendMessage,
   };
 }

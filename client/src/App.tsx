@@ -45,7 +45,8 @@ function App() {
   const [runtime, setRuntime] = useState<string>('');
 
   // WebSocket 連線 hook
-  const { isConnected, sendMessage, lastMessage } = useWebSocket('/ws/logs');
+  // batchMessages: 批次累積的 log 訊息，減少高頻更新造成的畫面閃爍
+  const { isConnected, sendMessage, lastMessage, batchMessages } = useWebSocket('/ws/logs');
 
   // 初始載入容器列表
   useEffect(() => {
@@ -53,33 +54,48 @@ function App() {
     fetchRuntime();
   }, []);
 
-  // 處理 WebSocket 收到的 log
+  // 處理批次 log 訊息：將累積的多條 log 一次性加入，減少 re-render 次數
+  useEffect(() => {
+    // batchMessages 為空陣列時不處理
+    if (batchMessages.length === 0) return;
+
+    // 若串流已關閉，忽略新 log
+    if (!isStreaming) return;
+
+    // 取得當前時間作為這批 log 的時間戳
+    const now = new Date();
+
+    // 將批次訊息轉換為 LogEntry 陣列
+    const newEntries: LogEntry[] = batchMessages
+      .filter((msg) => msg.data) // 確保 data 存在
+      .map((msg) => ({
+        timestamp: now,
+        text: msg.data as string,
+      }));
+
+    if (newEntries.length === 0) return;
+
+    setLogs((prev) => {
+      const newLogs = [...prev, ...newEntries];
+      // 若有設定上限且超過，則移除最舊的 log
+      if (maxLogs > 0 && newLogs.length > maxLogs) {
+        return newLogs.slice(-maxLogs);
+      }
+      return newLogs;
+    });
+  }, [batchMessages, isStreaming, maxLogs]);
+
+  // 處理 WebSocket 收到的非 log 訊息（started, end, error 等控制訊息）
   useEffect(() => {
     if (!lastMessage) return;
 
-    if (lastMessage.type === 'log' && lastMessage.data) {
-      // 若串流已關閉，忽略新 log
-      if (!isStreaming) return;
+    // log 訊息已由 batchMessages 處理，這裡只處理其他類型的訊息
+    // 目前 lastMessage 只會收到非 log 類型訊息，但保留此判斷以防萬一
+    if (lastMessage.type === 'log') return;
 
-      // 取出 data 並確保型別為 string（上面已經用 && lastMessage.data 確認不為 undefined）
-      const logData = lastMessage.data as string;
-
-      // 建立帶有時間戳的 log 項目，記錄收到此 log 的當下時間
-      const logEntry: LogEntry = {
-        timestamp: new Date(),
-        text: logData,
-      };
-
-      setLogs((prev) => {
-        const newLogs = [...prev, logEntry];
-        // 若有設定上限且超過，則移除最舊的 log
-        if (maxLogs > 0 && newLogs.length > maxLogs) {
-          return newLogs.slice(-maxLogs);
-        }
-        return newLogs;
-      });
-    }
-  }, [lastMessage, isStreaming, maxLogs]);
+    // 可在此處理 started, end, error 等控制訊息
+    // 目前暫無額外處理需求
+  }, [lastMessage]);
 
   // 取得容器列表
   const fetchContainers = async () => {
