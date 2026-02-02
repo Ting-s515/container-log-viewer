@@ -37,15 +37,17 @@ export function setupWebSocket(server: HttpServer) {
           activeStreams.set(ws, process);
 
           // 處理 stdout 串流
+          // 傳入 containerId 讓前端可以判斷日誌來源，避免切換容器時的競態條件
           process.stdout?.on('data', (chunk: Buffer) => {
             const lines = chunk.toString();
-            sendFilteredLogs(ws, lines, filter);
+            sendFilteredLogs(ws, lines, message.containerId, filter);
           });
 
           // 處理 stderr 串流（Docker logs 可能輸出到 stderr）
+          // 同樣傳入 containerId
           process.stderr?.on('data', (chunk: Buffer) => {
             const lines = chunk.toString();
-            sendFilteredLogs(ws, lines, filter);
+            sendFilteredLogs(ws, lines, message.containerId, filter);
           });
 
           // 程序結束時通知客戶端
@@ -105,8 +107,9 @@ export function setupWebSocket(server: HttpServer) {
 
 /**
  * 發送過濾後的 log 到客戶端
+ * @param containerId - 容器 ID，讓前端可以判斷日誌是否屬於當前選擇的容器
  */
-function sendFilteredLogs(ws: WebSocket, logs: string, filter?: string) {
+function sendFilteredLogs(ws: WebSocket, logs: string, containerId: string, filter?: string) {
   if (ws.readyState !== WebSocket.OPEN) return;
 
   let lines = logs;
@@ -123,7 +126,8 @@ function sendFilteredLogs(ws: WebSocket, logs: string, filter?: string) {
     if (!lines.trim()) return;
   }
 
-  ws.send(JSON.stringify({ type: 'log', data: lines }));
+  // 包含 containerId，讓前端可以過濾不屬於當前容器的日誌
+  ws.send(JSON.stringify({ type: 'log', data: lines, containerId }));
 }
 
 /**

@@ -46,7 +46,8 @@ function App() {
 
   // WebSocket 連線 hook
   // batchMessages: 批次累積的 log 訊息，減少高頻更新造成的畫面閃爍
-  const { isConnected, sendMessage, lastMessage, batchMessages } = useWebSocket('/ws/logs');
+  // clearBuffer: 清除緩衝區，用於切換容器時避免舊 log 被顯示
+  const { isConnected, sendMessage, lastMessage, batchMessages, clearBuffer } = useWebSocket('/ws/logs');
 
   // 初始載入容器列表
   useEffect(() => {
@@ -62,12 +63,16 @@ function App() {
     // 若串流已關閉，忽略新 log
     if (!isStreaming) return;
 
+    // 若尚未選擇容器，忽略
+    if (!selectedContainer) return;
+
     // 取得當前時間作為這批 log 的時間戳
     const now = new Date();
 
     // 將批次訊息轉換為 LogEntry 陣列
+    // 只處理屬於當前選擇容器的日誌，避免切換容器時的競態條件
     const newEntries: LogEntry[] = batchMessages
-      .filter((msg) => msg.data) // 確保 data 存在
+      .filter((msg) => msg.data && msg.containerId === selectedContainer)
       .map((msg) => ({
         timestamp: now,
         text: msg.data as string,
@@ -83,7 +88,7 @@ function App() {
       }
       return newLogs;
     });
-  }, [batchMessages, isStreaming, maxLogs]);
+  }, [batchMessages, isStreaming, maxLogs, selectedContainer]);
 
   // 處理 WebSocket 收到的非 log 訊息（started, end, error 等控制訊息）
   useEffect(() => {
@@ -126,6 +131,9 @@ function App() {
   // 選擇容器時開始串流
   const handleContainerChange = (containerId: string) => {
     setSelectedContainer(containerId);
+    // 先清除 WebSocket 緩衝區，避免舊容器的累積 log 在批次計時器觸發後被顯示
+    // 這是修復高頻 log 切換容器時的競態條件問題
+    clearBuffer();
     setLogs([]); // 清空舊 log
 
     if (containerId && isConnected) {
@@ -145,6 +153,8 @@ function App() {
 
     // 如果已經在串流，重新開始以套用新過濾
     if (selectedContainer && isConnected) {
+      // 清除緩衝區，避免舊過濾條件的 log 被顯示
+      clearBuffer();
       setLogs([]);
       sendMessage({
         type: 'start',

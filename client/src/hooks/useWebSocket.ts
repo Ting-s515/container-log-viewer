@@ -5,6 +5,7 @@ interface WsMessage {
   type: string;
   data?: string;
   message?: string;
+  // containerId 用於識別日誌來源，避免切換容器時的競態條件
   containerId?: string;
 }
 
@@ -100,6 +101,20 @@ export function useWebSocket(path: string) {
     }
   }, []);
 
+  // 清除緩衝區：用於切換容器時，避免舊 log 在批次計時器觸發後被顯示
+  // 解決競態條件：當高頻 log 累積在 pendingMessagesRef 時，切換容器會導致舊 log 被加回畫面
+  const clearBuffer = useCallback(() => {
+    // 清空累積中的 log 訊息
+    pendingMessagesRef.current = [];
+    // 取消正在等待的批次計時器
+    if (batchTimerRef.current) {
+      clearTimeout(batchTimerRef.current);
+      batchTimerRef.current = null;
+    }
+    // 清空已發送但尚未處理的批次訊息
+    setBatchMessages([]);
+  }, []);
+
   // 初始化連線
   useEffect(() => {
     connect();
@@ -125,5 +140,7 @@ export function useWebSocket(path: string) {
     // 批次 log 訊息陣列，供上層組件一次處理多條 log
     batchMessages,
     sendMessage,
+    // 清除緩衝區，用於切換容器時避免競態條件
+    clearBuffer,
   };
 }
