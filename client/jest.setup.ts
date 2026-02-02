@@ -8,6 +8,16 @@
 
 import '@testing-library/jest-dom';
 
+// Mock ResizeObserver - Headless UI 等現代 UI 庫需要此 API
+// jsdom 環境不支援 ResizeObserver，需手動提供 mock 實作
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+global.ResizeObserver = ResizeObserverMock;
+
 // 確保全域有 WebSocket 常數可供測試使用
 // jsdom 環境已內建 WebSocket，但為了測試穩定性，確保常數存在
 if (typeof WebSocket !== 'undefined') {
