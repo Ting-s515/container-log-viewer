@@ -5,7 +5,7 @@
  * 命名規範：Given條件_When動作_Should預期行為
  */
 
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useWebSocket } from '../useWebSocket';
 
 // Mock WebSocket 類別，用於模擬瀏覽器的 WebSocket API
@@ -474,7 +474,7 @@ describe('useWebSocket', () => {
 
     it('GivenPendingBatchTimer_WhenUnmount_ShouldClearBatchTimer', () => {
       // Given - 有待處理的批次計時器
-      const { result, unmount } = renderHook(() => useWebSocket('/ws/logs'));
+      const { unmount } = renderHook(() => useWebSocket('/ws/logs'));
       act(() => {
         MockWebSocket.instances[0].simulateOpen();
         MockWebSocket.instances[0].simulateMessage({ type: 'log', data: 'Pending log' });

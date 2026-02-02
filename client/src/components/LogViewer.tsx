@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
-import type { LogEntry } from '../App';
+import type { LogEntry } from '../types';
+
+// 從 types/index.ts 引入 LogEntry 型別，解除對 App.tsx 的循環依賴
 
 interface LogViewerProps {
   logs: LogEntry[];  // 帶有時間戳的 log 項目陣列

@@ -1,13 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import type { WsMessage } from '../types';
 
-// WebSocket 訊息型別
-interface WsMessage {
-  type: string;
-  data?: string;
-  message?: string;
-  // containerId 用於識別日誌來源，避免切換容器時的競態條件
-  containerId?: string;
-}
+// 從 types/index.ts 引入 WsMessage 型別，消除重複定義
 
 // 批次更新的間隔時間（毫秒）
 // 收集此期間內的所有 log，一次性更新 UI，避免高頻更新導致畫面閃爍

@@ -1,12 +1,7 @@
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
+import type { Container } from '../types';
 
-interface Container {
-  id: string;
-  name: string;
-  image: string;
-  status: string;
-  state: string;
-}
+// 從 types/index.ts 引入 Container 型別，消除重複定義
 
 interface ContainerSelectProps {
   containers: Container[];
