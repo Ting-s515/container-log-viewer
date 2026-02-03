@@ -189,17 +189,18 @@ describe('LogViewer', () => {
       expect(highlightedElement).toHaveClass('bg-yellow-500');
     });
 
-    it('GivenKeywordNotInText_WhenRenderLogViewer_ShouldNotHighlight', () => {
+    it('GivenKeywordNotInText_WhenRenderLogViewer_ShouldShowNoMatchMessage', () => {
       // Given - log 內容不包含關鍵字
       const logs: LogEntry[] = [createLogEntry('This is a normal message')];
 
       // When - 渲染 LogViewer 並搜尋不存在的關鍵字
       render(<LogViewer logs={logs} isFollowing={false} filter="xyz123" />);
 
-      // Then - 不應有任何 highlight
-      expect(screen.queryByText('xyz123')).toBeNull();
-      // 原始文字應完整顯示
-      expect(screen.getByText(/This is a normal message/)).toBeInTheDocument();
+      // Then - 前端過濾會移除不符合的 log，應顯示「No logs match the filter」
+      // （這是新增前端過濾功能後的預期行為）
+      expect(screen.getByText('No logs match the filter')).toBeInTheDocument();
+      // 原始文字不應顯示（因為被過濾掉了）
+      expect(screen.queryByText(/This is a normal message/)).not.toBeInTheDocument();
     });
   });
 
@@ -241,6 +242,143 @@ describe('LogViewer', () => {
 
       // Then - 應顯示格式化的時間戳
       expect(screen.getByText('[2024-06-15 14:30:45]')).toBeInTheDocument();
+    });
+  });
+
+  describe('filteredLogs 前端過濾邏輯', () => {
+    // 測試輔助函數：建立 LogEntry
+    const createLogEntry = (text: string, timestamp?: Date): LogEntry => ({
+      timestamp: timestamp ?? new Date(2024, 0, 1, 12, 0, 0),
+      text,
+    });
+
+    it('GivenFilterHasValue_WhenRenderLogViewer_ShouldOnlyShowMatchingLines', () => {
+      // Given - log 包含多行，只有部分包含關鍵字
+      const logs: LogEntry[] = [
+        createLogEntry('error: something went wrong\ninfo: all good\nerror: another issue'),
+      ];
+
+      // When - 渲染 LogViewer 並設定 filter 為 "error"
+      render(<LogViewer logs={logs} isFollowing={false} filter="error" />);
+
+      // Then - 應只顯示包含 "error" 的行
+      // 注意：highlightKeyword 會把文字拆成多個元素，所以用 getAllByText 找 highlight 的部分
+      const highlightedElements = screen.getAllByText('error');
+      // 應有 2 個 "error" 被高亮（兩行各一個）
+      expect(highlightedElements).toHaveLength(2);
+      highlightedElements.forEach((el) => {
+        expect(el).toHaveClass('bg-yellow-500');
+      });
+
+      // "info: all good" 不應顯示（因為不符合 filter）
+      expect(screen.queryByText(/info: all good/)).not.toBeInTheDocument();
+    });
+
+    it('GivenEmptyFilter_WhenRenderLogViewer_ShouldShowAllLogs', () => {
+      // Given - log 包含多行
+      const logs: LogEntry[] = [
+        createLogEntry('line 1\nline 2\nline 3'),
+      ];
+
+      // When - 渲染 LogViewer 且 filter 為空
+      render(<LogViewer logs={logs} isFollowing={false} filter="" />);
+
+      // Then - 應顯示所有行
+      expect(screen.getByText(/line 1/)).toBeInTheDocument();
+      expect(screen.getByText(/line 2/)).toBeInTheDocument();
+      expect(screen.getByText(/line 3/)).toBeInTheDocument();
+    });
+
+    it('GivenLogEntryWithNoMatchingLines_WhenRenderLogViewer_ShouldRemoveEntireEntry', () => {
+      // Given - 兩個 logEntry，其中一個完全不符合 filter
+      const logs: LogEntry[] = [
+        createLogEntry('error: first entry', new Date(2024, 0, 1, 10, 0, 0)),
+        // 注意：這個 entry 不包含 "error" 關鍵字
+        createLogEntry('info: second entry\ndebug: all good', new Date(2024, 0, 1, 11, 0, 0)),
+      ];
+
+      // When - 渲染 LogViewer 並設定 filter 為 "error"
+      render(<LogViewer logs={logs} isFollowing={false} filter="error" />);
+
+      // Then - 第一個 entry 應顯示（包含 "error"）
+      // 使用 getAllByText 因為可能有多個 "error"，然後檢查第一個
+      const highlightedElements = screen.getAllByText('error');
+      expect(highlightedElements[0]).toHaveClass('bg-yellow-500');
+      expect(screen.getByText('[2024-01-01 10:00:00]')).toBeInTheDocument();
+
+      // 第二個 entry 完全不符合，應被移除（包括時間戳）
+      expect(screen.queryByText(/info: second entry/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/debug: all good/)).not.toBeInTheDocument();
+      expect(screen.queryByText('[2024-01-01 11:00:00]')).not.toBeInTheDocument();
+    });
+
+    it('GivenAllLogsNotMatchingFilter_WhenRenderLogViewer_ShouldShowNoMatchMessage', () => {
+      // Given - 所有 log 都不符合 filter
+      const logs: LogEntry[] = [
+        createLogEntry('info: all good'),
+        createLogEntry('debug: some debug info'),
+      ];
+
+      // When - 渲染 LogViewer 並設定一個不存在的 filter
+      render(<LogViewer logs={logs} isFollowing={false} filter="nonexistent" />);
+
+      // Then - 應顯示「No logs match the filter」訊息
+      expect(screen.getByText('No logs match the filter')).toBeInTheDocument();
+      // 不應顯示「Select a container to view logs」（因為 logs 不為空）
+      expect(screen.queryByText('Select a container to view logs')).not.toBeInTheDocument();
+    });
+
+    it('GivenCaseInsensitiveFilter_WhenRenderLogViewer_ShouldMatchRegardlessOfCase', () => {
+      // Given - log 包含不同大小寫的關鍵字
+      const logs: LogEntry[] = [
+        createLogEntry('ERROR: uppercase\nerror: lowercase\nError: mixed case\ninfo: no match'),
+      ];
+
+      // When - 渲染 LogViewer 並以小寫搜尋 "error"
+      render(<LogViewer logs={logs} isFollowing={false} filter="error" />);
+
+      // Then - 所有大小寫變體都應被高亮顯示
+      // highlightKeyword 會把匹配的關鍵字包在 span 中，所以用 getAllByText 找
+      const highlightedElements = screen.getAllByText(/^(ERROR|error|Error)$/i);
+      const highlighted = highlightedElements.filter((el) =>
+        el.classList.contains('bg-yellow-500')
+      );
+      // 應有 3 個不同大小寫的 "error" 被高亮
+      expect(highlighted).toHaveLength(3);
+
+      // "info: no match" 不應顯示（被前端過濾移除）
+      expect(screen.queryByText(/info: no match/)).not.toBeInTheDocument();
+    });
+
+    it('GivenMultipleLogEntries_WhenFilterApplied_ShouldFilterEachEntryIndependently', () => {
+      // Given - 多個 logEntry，每個有不同的符合程度
+      const logs: LogEntry[] = [
+        createLogEntry('error: entry1 line1\ninfo: entry1 line2', new Date(2024, 0, 1, 10, 0, 0)),
+        createLogEntry('error: entry2 line1\nerror: entry2 line2', new Date(2024, 0, 1, 11, 0, 0)),
+        createLogEntry('info: entry3 line1', new Date(2024, 0, 1, 12, 0, 0)),
+      ];
+
+      // When - 渲染 LogViewer 並設定 filter 為 "error"
+      render(<LogViewer logs={logs} isFollowing={false} filter="error" />);
+
+      // Then - 每個 entry 應獨立過濾
+      // 應有 3 個 "error" 被高亮（entry1 有 1 個，entry2 有 2 個）
+      const highlightedElements = screen.getAllByText('error');
+      expect(highlightedElements).toHaveLength(3);
+      highlightedElements.forEach((el) => {
+        expect(el).toHaveClass('bg-yellow-500');
+      });
+
+      // Entry 1 的 "info: entry1 line2" 不應顯示
+      expect(screen.queryByText(/info: entry1 line2/)).not.toBeInTheDocument();
+
+      // Entry 3: 完全不符合，整個 entry 被移除（包括時間戳）
+      expect(screen.queryByText(/info: entry3 line1/)).not.toBeInTheDocument();
+      expect(screen.queryByText('[2024-01-01 12:00:00]')).not.toBeInTheDocument();
+
+      // 應該只有 2 個時間戳顯示（entry1 和 entry2）
+      expect(screen.getByText('[2024-01-01 10:00:00]')).toBeInTheDocument();
+      expect(screen.getByText('[2024-01-01 11:00:00]')).toBeInTheDocument();
     });
   });
 });

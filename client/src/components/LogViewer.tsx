@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import type { LogEntry } from '../types';
 
 // 從 types/index.ts 引入 LogEntry 型別，解除對 App.tsx 的循環依賴
@@ -16,12 +16,38 @@ interface LogViewerProps {
 function LogViewer({ logs, isFollowing, filter }: LogViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll: scroll to bottom when new logs arrive
+  /**
+   * 前端過濾 log
+   * 在 debounce 期間，server 還沒重啟串流前，先在前端過濾顯示
+   * 這樣用戶輸入 filter 時，畫面會即時反映過濾結果
+   */
+  const filteredLogs = useMemo(() => {
+    // 沒有 filter 時，直接返回所有 log
+    if (!filter) return logs;
+
+    const filterLower = filter.toLowerCase();
+
+    return logs
+      .map((logEntry) => {
+        // 過濾每個 logEntry 中符合關鍵字的行
+        const filteredText = logEntry.text
+          .split('\n')
+          .filter((line) => line.toLowerCase().includes(filterLower))
+          .join('\n');
+
+        return { ...logEntry, text: filteredText };
+      })
+      // 移除過濾後沒有內容的 entry
+      .filter((logEntry) => logEntry.text.trim());
+  }, [logs, filter]);
+
+  // Auto-scroll: scroll to bottom when filtered logs change
+  // 監聽 filteredLogs 而非 logs，確保過濾後的結果變化也會觸發捲動
   useEffect(() => {
     if (isFollowing && containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
-  }, [logs, isFollowing]);
+  }, [filteredLogs, isFollowing]);
 
   /**
    * Highlight matching keywords in log text
@@ -75,15 +101,18 @@ function LogViewer({ logs, isFollowing, filter }: LogViewerProps) {
       ref={containerRef}
       className="bg-gray-950 rounded-lg border border-gray-700 h-[calc(100vh-140px)] overflow-auto font-mono text-sm"
     >
-      {logs.length === 0 ? (
+      {filteredLogs.length === 0 ? (
         // Empty state message
         <div className="flex items-center justify-center h-full text-gray-500">
-          Select a container to view logs
+          {/* 區分「沒有 log」和「過濾後沒有符合的結果」兩種情況 */}
+          {logs.length === 0
+            ? 'Select a container to view logs'
+            : 'No logs match the filter'}
         </div>
       ) : (
         // Render log lines
         <div className="p-4">
-          {logs.map((logEntry, chunkIndex) =>
+          {filteredLogs.map((logEntry, chunkIndex) =>
             logEntry.text.split('\n').map((line, lineIndex) => {
               if (!line) return null;
 
