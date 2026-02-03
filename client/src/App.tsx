@@ -53,17 +53,18 @@ function App() {
    */
   const handleContainerChange = (containerId: string): void => {
     setSelectedContainer(containerId);
+    // 切換容器時清空篩選條件，避免舊容器的 filter 影響新容器的顯示
+    setFilter('');
     // 先清除 WebSocket 緩衝區，避免舊容器的累積 log 在批次計時器觸發後被顯示
     // 這是修復高頻 log 切換容器時的競態條件問題
     clearBuffer();
     clearLogs(); // 清空舊 log
 
     if (containerId && isConnected) {
-      // 發送開始串流指令
+      // 發送開始串流指令（filter 已清空，不傳遞舊的 filter）
       sendMessage({
         type: 'start',
         containerId,
-        filter,
         tail: 100,
       });
     }
