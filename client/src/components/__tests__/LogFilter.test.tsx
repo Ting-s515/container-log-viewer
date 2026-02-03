@@ -2,7 +2,7 @@
  * LogFilter 組件單元測試
  *
  * 測試 LogFilter 的行為邏輯：
- * - Debounce 機制：輸入後 300ms 才觸發 onChange
+ * - Debounce 機制：輸入後 500ms 才觸發 onChange
  * - 外部 value 同步：當外部 value 改變時，內部 inputValue 應同步
  * - 輸入值相同時不觸發：當輸入值與 value 相同時，不應觸發 onChange
  *
@@ -25,7 +25,7 @@ describe('LogFilter', () => {
   });
 
   describe('Debounce 機制', () => {
-    it('GivenUserTyping_WhenTypingStops_ShouldTriggerOnChangeAfter300ms', () => {
+    it('GivenUserTyping_WhenTypingStops_ShouldTriggerOnChangeAfter500ms', () => {
       // Given - 渲染 LogFilter 並設定 onChange mock
       const mockOnChange = jest.fn();
       render(<LogFilter value="" onChange={mockOnChange} />);
@@ -38,17 +38,17 @@ describe('LogFilter', () => {
       // Then - 立即檢查：onChange 不應被呼叫
       expect(mockOnChange).not.toHaveBeenCalled();
 
-      // When - 等待 300ms debounce 時間
+      // When - 等待 500ms debounce 時間
       act(() => {
-        jest.advanceTimersByTime(300);
+        jest.advanceTimersByTime(500);
       });
 
-      // Then - 300ms 後 onChange 應被呼叫，傳入新值
+      // Then - 500ms 後 onChange 應被呼叫，傳入新值
       expect(mockOnChange).toHaveBeenCalledTimes(1);
       expect(mockOnChange).toHaveBeenCalledWith('error');
     });
 
-    it('GivenUserTypingMultipleTimes_WhenTypingWithin300ms_ShouldOnlyTriggerOnceWithFinalValue', () => {
+    it('GivenUserTypingMultipleTimes_WhenTypingWithin500ms_ShouldOnlyTriggerOnceWithFinalValue', () => {
       // Given - 渲染 LogFilter 並設定 onChange mock
       const mockOnChange = jest.fn();
       render(<LogFilter value="" onChange={mockOnChange} />);
@@ -73,12 +73,12 @@ describe('LogFilter', () => {
 
       fireEvent.change(input, { target: { value: 'error' } });
 
-      // Then - 在完整的 300ms debounce 前，onChange 不應被呼叫
+      // Then - 在完整的 500ms debounce 前，onChange 不應被呼叫
       expect(mockOnChange).not.toHaveBeenCalled();
 
-      // When - 最後一次輸入後等待 300ms
+      // When - 最後一次輸入後等待 500ms
       act(() => {
-        jest.advanceTimersByTime(300);
+        jest.advanceTimersByTime(500);
       });
 
       // Then - onChange 只應被呼叫一次，傳入最終值
@@ -86,17 +86,17 @@ describe('LogFilter', () => {
       expect(mockOnChange).toHaveBeenCalledWith('error');
     });
 
-    it('GivenUserTyped_WhenWaiting299ms_ShouldNotTriggerOnChange', () => {
+    it('GivenUserTyped_WhenWaiting499ms_ShouldNotTriggerOnChange', () => {
       // Given - 渲染 LogFilter
       const mockOnChange = jest.fn();
       render(<LogFilter value="" onChange={mockOnChange} />);
 
       const input = screen.getByPlaceholderText('input keyword');
 
-      // When - 使用者輸入後只等待 299ms（不足 300ms）
+      // When - 使用者輸入後只等待 499ms（不足 500ms）
       fireEvent.change(input, { target: { value: 'test' } });
       act(() => {
-        jest.advanceTimersByTime(299);
+        jest.advanceTimersByTime(499);
       });
 
       // Then - onChange 不應被呼叫
@@ -153,7 +153,7 @@ describe('LogFilter', () => {
 
       // 等待 debounce 時間
       act(() => {
-        jest.advanceTimersByTime(300);
+        jest.advanceTimersByTime(500);
       });
 
       // Then - onChange 不應被呼叫，因為值沒有改變
@@ -171,7 +171,7 @@ describe('LogFilter', () => {
       fireEvent.change(input, { target: { value: '' } });
 
       act(() => {
-        jest.advanceTimersByTime(300);
+        jest.advanceTimersByTime(500);
       });
 
       // Then - onChange 應被呼叫，傳入空字串
@@ -216,7 +216,7 @@ describe('LogFilter', () => {
       // 注意：這主要是測試 cleanup 不會拋出錯誤
       expect(() => {
         act(() => {
-          jest.advanceTimersByTime(300);
+          jest.advanceTimersByTime(500);
         });
       }).not.toThrow();
     });
