@@ -17,13 +17,13 @@ function LogFilter({ value, onChange }: LogFilterProps) {
     setInputValue(value);
   }, [value]);
 
-  // Debounce: trigger onChange 300ms after user stops typing
+  // Debounce: trigger onChange 500ms after user stops typing
   useEffect(() => {
     const timer = setTimeout(() => {
       if (inputValue !== value) {
         onChange(inputValue);
       }
-    }, 300);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [inputValue, value, onChange]);
