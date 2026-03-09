@@ -134,10 +134,6 @@ $env:CLIENT_PORT=7070; $env:SERVER_PORT=7100; docker-compose -f docker-compose.h
 
 技術細節、API 規格、專案結構請參閱 [docs/developer.md](docs/developer.md)
 
-## 🤝 貢獻
-
-歡迎提交 Issue 和 Pull Request！
-
 ## 📄 License
 
 [MIT License](LICENSE)
