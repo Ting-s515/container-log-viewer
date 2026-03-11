@@ -64,10 +64,31 @@ Client (React) ←→ Vite Proxy ←→ Express Server ←→ Docker/Podman CLI
 - Client → Server: `{ type: 'start', containerId, filter?, tail? }` 或 `{ type: 'stop' }`
 - Server → Client: `{ type: 'log', data }`, `{ type: 'started' }`, `{ type: 'end' }`, `{ type: 'error' }`
 
+## work flow (不可跳過)
+
+### 1. 產生 Commit Message
+
+每次功能實作完成後，**自動產生** commit message，格式遵循 Conventional Commits：
+
+- 格式：`<type>: <description>`
+- 常用 type：`feature`、`fix`、`refactor`、`docs`、`style`、`other`
+- **不需要執行 git commit**，只需產生合適的 commit message
+
+### 2. 執行 Code Review（不可跳過）
+
+每次功能實作完成後，**必須**使用 Agent tool 開啟 subagent 執行 code review。
+
+**subagent prompt 組裝規則：**
+- 優先從對話中找使用者明確提供的需求規格文檔路徑
+- 若對話中無明確路徑，**詢問使用者確認後**再開啟 subagent
+- 將實際路徑填入 prompt，**不可使用佔位符**
+
+**subagent prompt 須包含：**
+1. 本次實作對應的需求規格文檔路徑（從對話中識別）
+2. use `code-reviewer` skill 執行審查
+
 ## 開發注意事項
 
 - 後端服務層 (`container.ts`) 會自動偵測可用的容器運行時（優先 docker，其次 podman）
 - Vite 開發伺服器已設定代理，將 `/api/*` 和 `/ws/*` 轉發到後端
 - WebSocket Hook 內建自動重連機制（3 秒延遲）
-- 過濾功能使用 300ms debounce 避免過度請求
-- 目前專案尚無測試設定
